@@ -1,2 +1,90 @@
-# IMU-SLAM-Deblur-Data
-This project is the open-source repo for IMU-Augmented Optical Image Deblurring and Its Application in Visual SLAM, offering multi-modal (image+IMU) experimental datasets (extended GOPRO, self-collected blurred, blur perception) with synchronized data for ORB-SLAM3 deblurring validation and related research.
+# IMU增强的光学图像去模糊数据集
+本数据集为《IMU增强的光学图像去模糊与视觉SLAM应用》研究配套原创数据集，包含扩展GOPRO数据集、自采集模糊图像数据集、模糊感知子数据集三类核心数据，所有数据仅由图像文件和同步IMU原始数据构成，无额外标注文件，可直接用于图像去模糊、模糊感知、IMU融合SLAM相关实验验证。
+
+## 数据集整体结构
+```
+Blur-Dataset/
+├── Self-collected Blur Dataset/  # 自采集模糊图像数据集（1200张）
+│   ├── image/                    # 全场景模糊图像（室内/室外/走廊，全局/局部模糊）
+│   └── imu_data/                 # 对应IMU原始数据
+├── Blur Perception Dataset/      # 模糊感知子数据集
+│   ├── local-blur/               # 局部模糊图像（40张）
+│   │   ├── image/                # 局部模糊图像文件
+│   │   └── imu_data/             # 对应IMU原始数据
+│   ├── clear/                    # 清晰图像（40张）
+│   │   ├── image/                # 清晰图像文件
+│   │   └── imu_data/             # 对应IMU原始数据
+│   └── global-blur/              # 全局模糊图像（40张）
+│       ├── image/                # 全局模糊图像文件
+│       └── imu_data/             # 对应IMU原始数据
+└── Extended-GOPR0/               # 扩展GOPRO数据集（总计3214对模糊-清晰图像）
+    ├── train/                    # 训练集（2103对）
+    │   ├── Extended-GOPR0XXXX_XX_XX/  # 按原始GOPRO序列划分的子文件夹（如Extended-GOPR0477_11_00）
+    │   │   ├── blur/             # 模糊图像
+    │   │   ├── sharp/            # 清晰图像
+    │   │   └── imu/              # 对应合成IMU数据
+    │   └── ...（其余训练集序列文件夹）
+    └── test/                     # 测试集（1111对）
+        ├── Extended-GOPR0XXXX_XX_XX/  # 按原始GOPRO序列划分的子文件夹（如Extended-GOPR0869_11_00）
+        │   ├── blur/             # 模糊图像
+        │   ├── sharp/            # 清晰图像
+        │   └── imu/              # 对应合成IMU数据
+        └── ...（其余测试集序列文件夹）
+        +                                                                                                                                                                                 
+```
+
+## 各子数据集详情
+### 1. 扩展GOPRO数据集（Extended-GOPR0）
+- **数据规模**：总计3214对模糊-清晰图像，其中训练集包含2103对、测试集包含1111对，与原始GOPRO模糊图像数据集的数量和序列划分完全一致；
+- **数据来源**：基于公开GOPRO模糊图像数据集扩展，为每一对模糊-清晰图像补充了符合MPU-6050传感器特性的合成IMU数据；
+- **IMU数据说明**：
+  - 合成规则：遵循MPU-6050噪声模型；
+  - 采样频率：100Hz；
+  - 文件组织：每个GOPRO序列子文件夹（如Extended-GOPR0477_11_00）下的`imu`目录，存放该序列所有图像对应的IMU数据。
+
+### 2. 自采集模糊图像数据集（Self-collected Blur Dataset）
+- **数据规模**：总计1200张模糊图像，覆盖室内、室外、走廊三类真实场景，包含全局运动模糊、局部动态模糊两种模糊类型；
+- **采集硬件**：
+  - 图像采集：RGB相机（采集频率10Hz，，分辨率【补充你的实际分辨率，如1280×720】）；
+  - IMU采集：采集频率200Hz，输出角速度、加速度原始数据；
+- **IMU数据说明**：
+  - 同步规则：每张图像对应其采集时间窗口内的20组连续IMU数据（10Hz图像间隔100ms，200Hz IMU每5ms一组）；
+  - 文件组织：`imu_data`目录下的IMU文件与`image`目录下的图像文件按名称一一匹配。
+
+### 3. 模糊感知子数据集（Blur Perception Dataset）
+- **数据规模**：清晰图像、局部模糊图像、全局模糊图像各40张，总计120张；
+- **数据用途**：专用于模糊类型感知、模糊程度量化分析实验；
+- **采集与同步规则**：硬件配置、IMU采样频率、图像-IMU时间同步规则与自采集模糊图像数据集完全一致；
+- **文件组织**：`clear`/`local-blur`/`global-blur`三个目录下均独立包含`image`（图像）和`imu_data`（对应IMU数据）子目录，数据按序号一一匹配。
+
+## 数据格式规范
+### 1. 图像文件
+- 格式：PNG格式，无压缩或轻量压缩，保证图像纹理信息完整；
+- 命名规则：纯字母/数字/下划线组合，无特殊字符，确保与IMU文件名称一一对应。
+
+### 2. IMU数据文件
+- 格式：CSV文件，UTF-8编码；
+- 每行内容（空格分隔）：`时间戳(ns) 加速度计x(g) 加速度计y(g) 加速度计z(g) 陀螺仪x(°/s) 陀螺仪y(°/s) 陀螺仪z(°/s)`；
+- 示例：
+  ```
+timestamp,ax,ay,az,gx,gy,gz
+0.0,0.04967941151692234,-0.08850317729840848,10.004738134588278,0.27903829388497314,0.543404591922329,0.2877439565496668
+0.001,-0.1741974025006656,0.18775798706111596,9.882456472914072,0.8099951105256251,0.2914012764027799,0.579986543114384
+  ...
+  ```
+- 说明：每行对应一组IMU原始数据。
+
+## 数据获取说明
+1. 扩展GOPRO数据集：原始GOPRO图像数据集（官方地址：https://seungjunnah.github.io/Datasets/gopro）
+本仓库完整扩展数据集：链接：https://pan.baidu.com/s/1Ckz5UckoBt5Cijf_Jo3qKw
+提取码：h7wy
+2. 自采集模糊图像数据集 / 模糊感知子数据集：完整的图像文件与配套 IMU 原始数据已上传至百度网盘，可通过以下链接下载，文件解压后目录结构与本仓库完全一致：
+链接：https://pan.baidu.com/s/1Ckz5UckoBt5Cijf_Jo3qKw
+提取码：h7wy
+
+3. 本仓库未使用 GitHub存储大文件，所有数据集相关的说明文件、目录映射均在仓库内，核心图像与 IMU 数据优先通过上述百度网盘链接获取。
+
+## 免责声明
+1. 扩展GOPRO数据集仅复用原始GOPRO图像的序列划分，IMU数据为原创合成，无侵权意图；
+2. 自采集数据集仅用于学术研究，禁止商用；
+3. 数据集使用过程中若因数据格式、同步问题导致实验异常，可联系【你的邮箱】获取技术支持。
